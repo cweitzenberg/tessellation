@@ -102,7 +102,6 @@ cam_x: float = 0.0
 cam_y: float = 0.0
 cam_scale: float = 700.0
 
-PAN_SPEED = 300.0   # pixels per second for WASD
 
 def init_camera(w, h):
     """Start zoomed so ~48 divisions are visible, centred on the grid."""
@@ -1769,7 +1768,7 @@ def main():
 
     running = True
     while running:
-        dt = clock.tick(60) / 1000.0
+        clock.tick(60)
         mx, my = pygame.mouse.get_pos()
 
         for event in pygame.event.get():
@@ -1781,15 +1780,11 @@ def main():
                 screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
             elif event.type == pygame.MOUSEWHEEL:
-                # Zoom toward/away from mouse position
                 zoom_factor = 1.1 if event.y > 0 else (1.0 / 1.1)
-                new_scale = cam_x_before = cam_scale * zoom_factor
-                # Clamp scale: min shows full grid in ~200px, max is very zoomed
-                new_scale = max(100.0, min(new_scale, cam_scale * 10 if zoom_factor > 1 else cam_scale))
                 new_scale = max(100.0, min(50000.0, cam_scale * zoom_factor))
-                # Zoom toward mouse: keep mouse position fixed in grid space
-                cam_x = mx - (mx - cam_x) * (new_scale / cam_scale)
-                cam_y = my - (my - cam_y) * (new_scale / cam_scale)
+                cx, cy = SCREEN_W / 2.0, SCREEN_H / 2.0
+                cam_x = cx - (cx - cam_x) * (new_scale / cam_scale)
+                cam_y = cy - (cy - cam_y) * (new_scale / cam_scale)
                 cam_scale = new_scale
 
             elif event.type == pygame.KEYDOWN:
@@ -1857,18 +1852,6 @@ def main():
                         invalidate_bg()
                         info_text = "Hover a vertex on any active line to trim."
                         pygame.display.set_caption("Origami Triangle Grid")
-
-        # WASD pan (held keys, dt-based)
-        keys = pygame.key.get_pressed()
-        pan = PAN_SPEED * dt
-        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            cam_x += pan
-        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            cam_x -= pan
-        if keys[pygame.K_w] or keys[pygame.K_UP]:
-            cam_y += pan
-        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-            cam_y -= pan
 
         # Hover logic (outside event loop for smooth update)
         if not popup_active:
